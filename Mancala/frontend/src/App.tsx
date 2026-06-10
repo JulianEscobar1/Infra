@@ -177,7 +177,7 @@ export const App: React.FC = () => {
                   className="btn-action"
                   disabled={loading || backendReady === false}
                 >
-                  {loading ? 'Calculando Jugada Óptima...' : 'Compute Move'}
+                  {loading ? 'Calculando Jugada Óptima...' : 'Calcular Jugada'}
                 </button>
               </div>
             </form>

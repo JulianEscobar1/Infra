@@ -41,10 +41,18 @@ export const MancalaBoard: React.FC<MancalaBoardProps> = ({
       <div className="glass-panel mancala-board">
         {/* North Store (Kalaha 13) */}
         <div className="store-container">
-          <div className="store north">
+          <div
+            className="store north"
+            onClick={() => updatePit(13, 1)}
+          >
             <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{board[13]}</span>
             <span className="pit-index-label">Kalaha N (13)</span>
             {renderSeedsPreview(board[13])}
+          </div>
+          <div className="pit-controls" style={{ marginTop: '8px' }}>
+            <button className="pit-btn" onClick={() => updatePit(13, -1)}>-</button>
+            <span className="pit-index-label">K13</span>
+            <button className="pit-btn" onClick={() => updatePit(13, 1)}>+</button>
           </div>
         </div>
 
@@ -99,10 +107,18 @@ export const MancalaBoard: React.FC<MancalaBoardProps> = ({
 
         {/* South Store (Kalaha 6) */}
         <div className="store-container">
-          <div className="store south">
+          <div
+            className="store south"
+            onClick={() => updatePit(6, 1)}
+          >
             <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{board[6]}</span>
             <span className="pit-index-label">Kalaha S (6)</span>
             {renderSeedsPreview(board[6])}
+          </div>
+          <div className="pit-controls" style={{ marginTop: '8px' }}>
+            <button className="pit-btn" onClick={() => updatePit(6, -1)}>-</button>
+            <span className="pit-index-label">K6</span>
+            <button className="pit-btn" onClick={() => updatePit(6, 1)}>+</button>
           </div>
         </div>
       </div>
