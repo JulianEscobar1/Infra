@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mancala-config
+data:
+  OMP_NUM_THREADS: "4"
+  ENGINE_URL: "http://motor:8080"
+  ALLOWED_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080,http://localhost"

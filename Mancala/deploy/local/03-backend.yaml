@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: motor-backend
+spec:
+  # As per project requirements: >= 3 replicas
+  replicas: 3
+  selector:
+    matchLabels:
+      app: motor-backend
+  template:
+    metadata:
+      labels:
+        app: motor-backend
+    spec:
+      containers:
+      - name: motor-backend
+        # Using the local image built by docker-compose
+        image: mancala-motor-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: mancala-config
+        # Health checks (Liveness/Readiness probes)
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: motor-backend
+spec:
+  # ClusterIP is default, keeps it strictly internal
+  type: ClusterIP
+  selector:
+    app: motor-backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
