@@ -6,23 +6,44 @@ import { MoveResponse } from './types';
 const INITIAL_BOARD = [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0];
 const EMPTY_BOARD = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
+// Kalah rule: game ends when kalaha holds > 24 seeds (strict majority of 48 total)
+const WIN_THRESHOLD = 24;
+
+function detectWinner(board: number[]): 'south' | 'north' | null {
+  const southKalaha = board[6];
+  const northKalaha = board[13];
+  if (southKalaha > WIN_THRESHOLD) return 'south';
+  if (northKalaha > WIN_THRESHOLD) return 'north';
+  return null;
+}
+
 export const App: React.FC = () => {
   const [board, setBoard] = useState<number[]>(INITIAL_BOARD);
   const [side, setSide] = useState<'south' | 'north'>('south');
   const [depth, setDepth] = useState<number>(8);
   const [threads, setThreads] = useState<number>(4);
-  
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<MoveResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [backendReady, setBackendReady] = useState<boolean | null>(null);
+  const [winner, setWinner] = useState<'south' | 'north' | null>(null);
+  const [showModal, setShowModal] = useState<boolean>(false);
 
   // Check backend readiness on load
   useEffect(() => {
     checkHealth();
-    const interval = setInterval(checkHealth, 10000); // Poll every 10s
+    const interval = setInterval(checkHealth, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // Watch for a winner whenever the board changes
+  useEffect(() => {
+    const w = detectWinner(board);
+    if (w) {
+      setWinner(w);
+      setShowModal(true);
+    }
+  }, [board]);
 
   const checkHealth = async () => {
     const isReady = await checkBackendReady();
@@ -33,12 +54,16 @@ export const App: React.FC = () => {
     setBoard(INITIAL_BOARD);
     setResult(null);
     setError(null);
+    setWinner(null);
+    setShowModal(false);
   };
 
   const handleClear = () => {
     setBoard(EMPTY_BOARD);
     setResult(null);
     setError(null);
+    setWinner(null);
+    setShowModal(false);
   };
 
   const handleComputeMove = async (e: React.FormEvent) => {
@@ -48,12 +73,7 @@ export const App: React.FC = () => {
     setResult(null);
 
     try {
-      const response = await computeMove({
-        board,
-        side,
-        depth,
-        threads,
-      });
+      const response = await computeMove({ board, side, depth, threads });
       setResult(response);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -66,8 +86,35 @@ export const App: React.FC = () => {
     }
   };
 
+  const winnerLabel = winner === 'south' ? '🟡 Sur' : '🟣 Norte';
+  const winnerSeeds = winner === 'south' ? board[6] : winner === 'north' ? board[13] : 0;
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', width: '100%', boxSizing: 'border-box' }}>
+
+      {/* ── Victory Modal ── */}
+      {showModal && winner && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            {/* Trophy animation */}
+            <div className="modal-trophy">🏆</div>
+            <h2 className="modal-title">¡Ganaste!</h2>
+            <p className="modal-subtitle">
+              El jugador <strong>{winnerLabel}</strong> ha ganado con{' '}
+              <strong>{winnerSeeds}</strong> semillas en su Kalaha.
+            </p>
+            <div className="modal-actions">
+              <button className="btn-action modal-btn-play" onClick={handleReset}>
+                🔄 Volver a Jugar
+              </button>
+              <button className="modal-btn-close" onClick={() => setShowModal(false)}>
+                ✕ Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
@@ -109,7 +156,7 @@ export const App: React.FC = () => {
           />
 
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            💡 Haz clic en los hoyos para añadir semillas (+) o usa los controles inferiores para restar.
+            💡 Haz clic en los hoyos para añadir semillas (+) o usa los controles inferiores para restar. Máximo 24 fichas por jugador.
           </p>
         </section>
 
@@ -118,10 +165,10 @@ export const App: React.FC = () => {
           {/* Form Config */}
           <section className="glass-panel" style={{ padding: '24px' }}>
             <h2 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 600 }}>Parámetros de Búsqueda</h2>
-            
+
             <form onSubmit={handleComputeMove}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr md', gap: '16px' }}>
-                
+
                 {/* Side Selection */}
                 <div className="config-group">
                   <label>Lado actual (Maximiza)</label>
@@ -197,9 +244,9 @@ export const App: React.FC = () => {
               <h2 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 600, color: 'var(--success)' }}>
                 Jugada Calculada con Éxito
               </h2>
-              
+
               <div className="results-grid">
-                
+
                 <div className="metric-card" style={{ gridColumn: 'span 2', borderLeft: '4px solid var(--success)' }}>
                   <span className="title">Mejor Movimiento Recomendado</span>
                   <span className="value" style={{ fontSize: '1.75rem', color: 'var(--success)' }}>
