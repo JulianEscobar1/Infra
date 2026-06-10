@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: motor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: motor
+  template:
+    metadata:
+      labels:
+        app: motor
+    spec:
+      containers:
+      - name: motor
+        # Using the local image built by docker-compose
+        image: mancala-motor:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: mancala-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: motor
+spec:
+  # ClusterIP is default, keeps it strictly internal
+  type: ClusterIP
+  selector:
+    app: motor
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
